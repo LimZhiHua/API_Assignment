@@ -2,13 +2,6 @@ const api = require('./apis')
 const request = require('supertest');
 var expect = require('chai').expect
 
-var conn = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "password",
-    database: "new_schema",
-    insecureAuth : true
-  });
   
 api.listen(3000, () => {
     console.log("Server running on port 3000");
