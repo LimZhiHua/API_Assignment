@@ -1,217 +1,299 @@
-const express = require('express');
-var bodyParser = require('body-parser')
+const api = require('./apis')
+const request = require('supertest');
+var expect = require('chai').expect
 
-var mysql = require('mysql');
-const util = require('util');
+const { INT24 } = require('mysql/lib/protocol/constants/types');
 
-app = express(),
-port = process.env.PORT || 3000;
-app.use(bodyParser.json())
-
-
-// ----------------------------------SQL Portion---------------------------------------
-// Change these parameters when you get an actual DB instead of the local one.
-var conn = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "password",
-    database: "new_schema",
-    insecureAuth : true
-  });
-
-// I prefer async/await to callbacks.
-const query = util.promisify(conn.query).bind(conn);
-
-
-// ----------------------------------API Portion---------------------------------------
-app.listen(3000, () => {
+api.listen(3000, () => {
     console.log("Server running on port 3000");
 });
 
-/*
-    A teacher can register multiple students(new or existing). A student can also be registered to
-    multiple teachers.
-    Endpoint: POST /api/register
-    Headers: Content-Type: application/json
-    Success response status: HTTP 204
-    Request body example:
 
-    Basically adds entries to the jointeacherstudent table
-*/
-app.post("/api/register", async (req, res) => {
-    const teacher = mysql.escape(req.body.teacher);
-    const students = req.body.students;    
-    // We need a list of: (teacher, student1), (teacher, student2)....
-    let teachStudent = ''
-    students.forEach( item => {
-        teachStudent += '(' + teacher + ',' + mysql.escape(item) + '),'
+//-------------------------/api/register-----------------------
+describe('One teacher, one student', () => {
+    it('Returns status code 204 if passed', async () => {
+        const res = await request(api).post('/api/register').send(
+            {
+                "teacher": "teacher@mail.com",
+                "students":
+                    [
+                    "student3@mail.com"
+                    ]
+            }
+        )
+        expect(res.statusCode).to.equal(204)
+
     })
-    if(teachStudent.length > 0){
-        teachStudent = teachStudent.slice(0,-1)
-    }
-    const sql =  'INSERT INTO jointeacherstudent (teacher, student) values ' + teachStudent
-    try {
-        await query(sql);
-        res.status(204).send()
-    } catch (err){
-        console.log(err)
-        res.status(500).send(err);
-    } 
-});
+})
+
+describe(' One teacher, multiple students', () => {
+    it('Returns status code 204 if passed', async () => {
+        const res = await request(api).post('/api/register').send(
+            {
+                "teacher": "teacher@mail.com",
+                "students":
+                    [
+                    "student0@mail.com",
+                    "student2@mail.com",
+                    "student3@mail.com"
+                    ]
+            }
+        )
+        expect(res.statusCode).to.equal(204)
+    })
+})
+
+describe(' Different teacher, multiple students', () => {
+    it('Returns status code 204 if passed', async () => {
+        const res = await request(api).post('/api/register').send(
+            {
+                "teacher": "teacher2@mail.com",
+                "students":
+                    [
+                        "student0@mail.com",
+                        "student2@mail.com"
+                    ]
+            }
+        )
+        expect(res.statusCode).to.equal(204)
+    })
+})
 
 
-/*
-    As a teacher, I want to retrieve a list of students
-    common to a given list of teachers (i.e. retrieve students
-    who are registered to ALL of the given teachers).
-    Endpoint: GET /api/commonstudents
-    Success response status: HTTP 200
-    Request example 1: GET /api/commonstudents?teacher=teacherken%40gmail.com
-    Success response body 1:
 
-    {
-        "students" :
-        [
-        "commonstudent1@gmail.com",
-        "commonstudent2@gmail.com",
-        "student_only_under_teacher_ken@gmail.com"
-        ]
-    }
+describe('non-existant teacher, one students', () => {
+    it('Returns an error saying the teacher was not found', async () => {
+        const res = await request(api).post('/api/register').send(
+            {
+                "teacher": "teacherFAKE@mail.com",
+                "students":
+                    [
+                    "student0@mail.com"
+                    ]
+            }
+        )
+        expect(res.statusCode).to.equal(404)
+        expect(JSON.stringify(res.body)).to.equal(JSON.stringify({
+            "message": "teacher 'teacherFAKE@mail.com' was not found"
+        }))
 
-*/
+    })
+})
 
-app.get("/api/commonstudents", async (req, res) => {
-    const teachers = req.query.teacher
-    console.log("teachers is", teachers)
-    let existsTeach = ''
-    if(Array.isArray(teachers)){
-        teachers.forEach( teacher => {
-            existsTeach += existsString(teacher)
-        })
-        if(existsTeach.length > 0){
-            existsTeach = existsTeach.slice(0,-3)
-        }
-    }else{
-        existsTeach = existsString(teachers).slice(0,-3)
-    }
-    
-    try {
-        const sql = 'SELECT S1.student FROM students AS S1 WHERE'+ existsTeach;
-        const rows = await query(sql);
-        let studentList = []
-        rows.forEach( item => {
-            studentList.push(item.student)
-        })
-        res.status(200).send({'students': studentList })
-    } catch (err){
-        console.log(err)
-        res.status(500).send(err);
-    } 
-   
-});
 
-const existsString = (teacher) => {
-  return ' EXISTS  (SELECT * FROM jointeacherstudent AS J WHERE (S1.student = J.student AND J.teacher =' +  mysql.escape(teacher) + ')) AND'
-}
+describe('One teacher, non-existant student', () => {
+    it('It shouldnt insert anything, but should still return 204', async () => {
+        const res = await request(api).post('/api/register').send(
+            {
+                "teacher": "teacher@mail.com",
+                "students":
+                    [
+                    "student234@mail.com"
+                    ]
+            }
+        )
+        expect(res.statusCode).to.equal(204)
+    })
+})
 
-/*
-    As a teacher, I want to suspend a specified student.
-    Endpoint: POST /api/suspend
-    Headers: Content-Type: application/json
-    Success response status: HTTP 204
-    Request body example:
-*/
 
-app.post("/api/suspend", async (req, res) => {
-    const student = req.body.student
-    
-    try {
-        // Check if the student exists first
-        const sqlCheck = 'SELECT student FROM students AS S WHERE s.student = ' + mysql.escape(student)
-        const exists = (await query(sqlCheck) ).length > 0
-        if(exists){
-            const sql = 'UPDATE students AS S SET suspended = 1 WHERE student = ' + mysql.escape(student)
-            await query(sql);
-            res.status(204).send()
-        }else{
-            res.status(400).send({ "message": "student " + student + "was not found" })
-        }       
 
-    } catch (err){
-        console.log(err)
-        res.status(500).send(err);
-    } 
-});
 
-/*
-    As a teacher, I want to retrieve a list of students who can
-    receive a given notification.
+//-------------------------/api/commonstudents-----------------------
+describe('Empty/No teacher ', () => {
+    it('Sends a call with no teachers specified', async () => {
+        const res = await request(api).get('/api/commonstudents').send()
+        expect(res.statusCode).to.equal(200)
+    })
+})
 
-    A notification consists of:
-    the teacher who is sending the notification, and
-    the text of the notification itself.
+describe('One teacher ', () => {
+    it('Sends a call with  only one teacher specified', async () => {
+        const res = await request(api).get('/api/commonstudents?teacher=teacher@mail.com').send()
+        expect(res.statusCode).to.equal(200)
+        expect(JSON.stringify(res.body)).to.equal(JSON.stringify(
+            {
+                "students": [
+                    "student0@mail.com",
+                    "student2@mail.com",
+                    "student3@mail.com"
+                ]
+            }
+        ))
+    })
+})
 
-    To receive notifications from e.g. 'teacherken@gmail.com', a student:
-    MUST NOT be suspended,
-    AND MUST fulfill AT LEAST ONE of the following:
-    1. is registered with “teacherken@gmail.com"
-    2. has been @mentioned in the notification
-    The list of students retrieved should not contain any duplicates/repetitions.
-    Endpoint: POST /api/retrievefornotifications
-    Headers: Content-Type: application/json
-    Success response status: HTTP 200
-    Request body example 1:
-    {
-         "students" :
-    [
-        "commonstudent1@gmail.com",
-        "commonstudent2@gmail.com"
-    ]
-    }
-    {
-        "student" : "studentmary@gmail.com"
-    }
-    {
-*/
-app.post("/api/retrievefornotifications", async (req, res) => {
-    const teacher = mysql.escape(req.body.teacher);
-    const notification = mysql.escape(req.body.notification);
-    
-    //const str = 'Hello students! @studentagnes@gmail.com @studentmiche@gmail.com hello there @potato@mail.ca'
 
-    // Regex detects: @stuff@stuff 
-    // Allows for multiple fullstops since some emails have that e.g zhihua.lim@mail.utoronto.ca
-    const regex = /@[a-zA-Z0-9_.]+@[a-zA-Z0-9_.]+/g
-    const studentList = notification.match(regex);
+describe('Multiple teachers', () => {
+    it('Sends a call with  multiple teachers specified', async () => {
+        const res = await request(api).get('/api/commonstudents?teacher=teacher@mail.com&teacher=teacher2@mail.com').send()
+        expect(res.statusCode).to.equal(200)
+        expect(JSON.stringify(res.body)).to.equal(JSON.stringify(
+            {
+                "students": [
+                    "student0@mail.com",
+                    "student2@mail.com"
+                ]
+            }
+        ))
+    })
+})
 
-    let sqlStudentList = ''
-    if(Array.isArray(studentList)){
-        studentList.forEach( student => {
-            sqlStudentList += 'S.student = ' + mysql.escape(student) + 'OR '
-        })
-        if(sqlStudentList.length > 0){
-            sqlStudentList = sqlStudentList.slice(0,-3)
-        }
-    }else{
-        sqlStudentList = existsString(studentList).slice(0,-3)
-    }
-    
-    try {
-        // Check if the teacher exists first
-        const teacherCheck = 'SELECT teacher FROM teachers AS T WHERE T.teacher = ' + teacher
-        const exists = (await query(teacherCheck) ).length > 0
-        if(exists){
-            const sql = 'SELECT * FROM students AS S WHERE (EXISTS (SELECT * FROM jointeacherstudent AS J WHERE (S.student = J.student AND J.teacher =' + teacher + ')) OR ' + sqlStudentList + ')AND S.suspended = 0;'
-            const rows = await query(sql);
-            console.log("rows is", rows)
-            res.status(204).send()
-        }else{
-            res.status(400).send({ "message": "teacher " + teacher + "was not found" })
-        }       
+describe('Non-Existant teachers', () => {
+    it('Sends a call with a teacher that doesnt exist teacher', async () => {
+        const res = await request(api).get('/api/commonstudents?teacher=teacher@gmail.com&teacher=teacherFAKE@mail.com').send()
+        expect(res.statusCode).to.equal(200)
+        expect(JSON.stringify(res.body)).to.equal(JSON.stringify(
+            {
+               "students":[]
+            }
+        ))
+    })
+})
 
-    } catch (err){
-        console.log(err)
-        res.status(500).send(err);
-    } 
-});
+//-------------------------/api/suspend-----------------------
+describe('Suspend a student', () => {
+    it('Suspending one existing student', async () => {
+        const res = await request(api).post('/api/suspend').send(
+            {
+                "student" : "student0@mail.com"
+                }
+        )
+        expect(res.statusCode).to.equal(204)
+    })
+})
 
+describe('Non-existant teacher suspends a student', () => {
+    it('suspending a non-existant student', async () => {
+        const res = await request(api).post('/api/suspend').send(
+            {
+                "student" : "studentFAKE@mail.com"
+                }
+        )
+        expect(res.statusCode).to.equal(404)
+        expect(JSON.stringify(res.body)).to.equal(JSON.stringify(
+            { "message": "student studentFAKE@mail.comwas not found"
+            }
+        ))
+    })
+})
+
+//-------------------------/api/retrievefornotifications-----------------------
+
+describe('empty notification', () => {
+    it('Teacher sending empty  notification (remember that student0 is suspended)', async () => {
+        const res = await request(api).post('/api/retrievefornotifications').send(
+            {
+                "teacher": "teacher@mail.com",
+                "notification": ""
+            }
+        )
+        expect(res.statusCode).to.equal(200)
+        expect(JSON.stringify(res.body)).to.equal(JSON.stringify(
+            {
+                "recipients": [
+                    "student2@mail.com",
+                    "student3@mail.com"
+                ]
+            }
+        ))
+    })
+})
+
+describe('meaningless notification', () => {
+    it('Teacher sending  notification without any meaningful @students (remember that student0 is suspended)', async () => {
+        const res = await request(api).post('/api/retrievefornotifications').send(
+            {
+                "teacher": "teacher@mail.com",
+                "notification": ""
+            }
+        )
+        expect(res.statusCode).to.equal(200)
+        expect(JSON.stringify(res.body)).to.equal(JSON.stringify(
+            {
+                "recipients": [
+                    "student2@mail.com",
+                    "student3@mail.com"
+                ]
+            }
+        ))
+    })
+})
+
+describe('simple teacher', () => {
+    it('Teacher sending notifiaction with a student', async () => {
+        const res = await request(api).post('/api/retrievefornotifications').send(
+            {
+                "teacher": "teacher@mail.com",
+                "notification": "notifcation for @student4@mail.com here"
+            }
+        )
+        expect(res.statusCode).to.equal(200)
+        expect(JSON.stringify(res.body)).to.equal(JSON.stringify(
+            {
+                "recipients": [
+                    "student2@mail.com",
+                    "student3@mail.com",
+                    "student4@mail.com"
+                ]
+            }
+        ))
+    })
+})
+
+describe('simple teacher', () => {
+    it('Teacher sending notifiaction with a duplicate student', async () => {
+        const res = await request(api).post('/api/retrievefornotifications').send(
+            {
+                "teacher": "teacher@mail.com",
+                "notification": "notifcation for @student3@mail.com here"
+            }
+        )
+        expect(res.statusCode).to.equal(200)
+        expect(JSON.stringify(res.body)).to.equal(JSON.stringify(
+            {
+                "recipients": [
+                    "student2@mail.com",
+                    "student3@mail.com"
+                ]
+            }
+        ))
+    })
+})
+
+describe('simple teacher', () => {
+    it('Teacher sending notifiaction with a duplicate student and a new student', async () => {
+        const res = await request(api).post('/api/retrievefornotifications').send(
+            {
+                "teacher": "teacher@mail.com",
+                "notification": "notifcation for @student3@mail.com @student4@mail.com"
+            }
+        )
+        expect(res.statusCode).to.equal(200)
+        expect(JSON.stringify(res.body)).to.equal(JSON.stringify(
+            {
+                "recipients": [
+                    "student2@mail.com",
+                    "student3@mail.com",
+                    "student4@mail.com"
+                ]
+            }
+        ))
+    })
+})
+
+
+describe('Non-existant teacher', () => {
+    it('Non-existant teacher sending notifications to students', async () => {
+        const res = await request(api).post('/api/retrievefornotifications').send(
+            {
+                "teacher": "teacherFAKE@gmail.com",
+                "notification": "Hello students! @studentagnes@gmail.com  @studentmiche@gmail.com"
+            }
+        )
+        expect(res.statusCode).to.equal(404)
+        expect(JSON.stringify(res.body)).to.equal(JSON.stringify(
+            {"message":"teacher 'teacherFAKE@gmail.com' was not found"}
+        ))
+    })
+})
