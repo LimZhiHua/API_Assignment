@@ -1,4 +1,4 @@
-const api = require('./apis')
+const api = require('./src/controllers/apis')
 const request = require('supertest');
 var expect = require('chai').expect
 

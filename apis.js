@@ -114,7 +114,6 @@ app.post("/api/register", async (req, res) => {
     }else{
         res.status(404).send(missingTeacher(teacher))
     }
-
    
 });
 
