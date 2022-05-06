@@ -10,11 +10,14 @@ const port =  3000;
 const routes = require('./src/routes/routes.js');
 
 
-sequelize.sync()
+sequelize.sync({force: true})
 .then((result)=>{
     console.log("Sequelize synced");
+    app.emit('Sequelize synced');
 }).catch((err)=>{
     console.log("error is", err)
+    app.emit('Sequelize synced');
+
 });
 
 Students.belongsToMany(Teachers, {through: 'teacher_student'})

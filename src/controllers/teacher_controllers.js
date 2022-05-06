@@ -4,6 +4,16 @@
 
 const service = require('../services/teacher_service');
 
+async function getTeachers(req, res){
+  try {
+    const response = await service.getTeachers();
+    res.json({'teachers': response});
+  } catch (err) {
+      console.error(`Error while getting teachers`, err.message);
+      res.status(500).send({'message': err});
+  }
+}
+
 
 // This isn't part of the required APIs. it just seems like something i would use
 async function createTeacher(req, res) {
@@ -13,7 +23,7 @@ async function createTeacher(req, res) {
       console.log("response is", response)
       res.json(response);
   } catch (err) {
-      console.error(`Error while getting programming languages`, err.message);
+      console.error(`Error while creating teachers`, err.message);
       res.status(500).send({'message': err});
   }
 }
@@ -44,7 +54,7 @@ async function register(req, res){
     for(let  i =  0; i < student_names.length; i++){
       promises.push(service.registerStudent(teacher_name, student_names[i]))
     }
-    Promise.all(promises).then( (response) => {
+    Promise.allSettled(promises).then( (response) => {
       res.status(204).send();
     })
   } catch (err) {
@@ -57,7 +67,9 @@ async function commonStudents(req, res){
   try {
     const teacher_names = req.query.teacher;
     let teacherArr = [];
-    if(!Array.isArray(teacher_names)){
+    if(!teacher_names){
+      res.status(404).send({'message': "Please specify at least one teacher"});
+    }else if(!Array.isArray(teacher_names)){
       teacherArr.push(teacher_names)
     }else{
       teacherArr = teacher_names
@@ -75,7 +87,7 @@ async function suspendStudent(req, res){
   try {
     const student_name = req.body.student;
     await service.suspendStudent(student_name);
-    res.json(resp);
+    res.status(204).send();
   } catch (err) {
       if (err.code === 404){
         res.status(404).send({'message': 'Student does not exist'});
@@ -94,7 +106,9 @@ async function retrieveForNotifications (req, res){
   const regex = /@[a-zA-Z0-9_.]+@[a-zA-Z0-9_.]+/g
   const studentList = notification.match(regex);
   let student_arr = []
-  if(!Array.isArray(studentList)){
+  if (!notification || !studentList || notification.length === 0 ){
+    student_arr = []
+  }else if(!Array.isArray(studentList)){
     student_arr.push(studentList.slice(1))
   }else{
     studentList.forEach(student => {
@@ -104,7 +118,7 @@ async function retrieveForNotifications (req, res){
 
   try {
     const resp = await service.retreiveForNotification(teacher_name, student_arr);
-    res.status(202).send(resp);
+    res.status(200).send({"recipients" :resp});
   } catch (err) {
       if (err.code === 404){
         res.status(404).send({'message': 'Student does not exist'});
@@ -119,6 +133,7 @@ async function retrieveForNotifications (req, res){
 }
 
   module.exports = {
+    getTeachers,
     createTeacher,
     register,
     commonStudents,

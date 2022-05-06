@@ -6,8 +6,10 @@ const router = express.Router();
 const teacher_controller = require('../controllers/teacher_controllers');
 const student_controller = require('../controllers/student_controllers');
 
-// router.get('/students', controller.get);
-  
+
+router.get('/getTeachers', teacher_controller.getTeachers);
+router.get('/getStudents', student_controller.getStudents);
+
 
 router.post('/createTeacher', teacher_controller.createTeacher);
 

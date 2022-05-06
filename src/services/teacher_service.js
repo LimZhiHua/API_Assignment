@@ -6,12 +6,23 @@ const sequelize = require("./db.service")
 // const db = require('./db.service');
 const Teachers = require("../models/teachers_model");
 const Students = require("../models/students_model");
-const StudentController = require("./student_service")
+const StudentService = require("./student_service")
 const Teacher_student = sequelize.define('teacher_student')
 
-const Sequlize = require('sequelize')
+const Sequlize = require('sequelize');
+const { set } = require("../../server");
 
 
+async function getTeachers(){
+  const resp =  await Teachers.findAll()
+  const teacher_names = resp.map((row)=> {
+    return row['teacher_name']
+  })
+
+  //console.log("resp data value is", resp[0].students)
+  return teacher_names
+
+}
 
 async function createTeacher(name){
   return await Teachers.findOrCreate({where: {teacher_name: name}})
@@ -27,7 +38,7 @@ async function registerStudent(teacher_name, student_name){
   }
   const foundStudent = await Students.findOne({where:{student_name:student_name}})
   if (!foundStudent){
-    await StudentController.createStudent(student_name)
+    await StudentService.createStudent(student_name)
   }
   const foundRelationship = await Teacher_student.findOne({where:{studentStudentName: student_name, teacherTeacherName: teacher_name}})
   if(foundRelationship == null){
@@ -65,23 +76,22 @@ async function commonStudents(teacherArr){
 }
 
 async function suspendStudent (student_name){
-  const exists = await StudentController.getStudent(student_name)
+  const exists = await StudentService.getStudent(student_name)
   if(!exists){
     const error =  new Error("Student does not exist")
     error.code = 404
     throw error;
   }
   return await Students.update({
-    suspended: 1
-  },
-  {
-    where: {student_name: student_name}
-  }
+      suspended: 1
+    },
+    {
+      where: {student_name: student_name}
+    }
   )
 }
 
 async function retreiveForNotification (teacher_name, student_list){
-  console.log("student list is", student_list)
   const resp =  await Teachers.findAll({
     include:{
       model: Students,
@@ -97,17 +107,28 @@ async function retreiveForNotification (teacher_name, student_list){
     },
     raw : true    
   })
-  console.log("resp is", resp)
-  const student_names = resp.map((row)=> {
-    return row['students.student_name']
-  })
+
+  let student_names = []
+  const unique_student_names = new Set()
+  for (let i = 0; i < resp.length; i++){
+    if(!unique_student_names.has(resp[i]['students.student_name'])){
+      student_names.push(resp[i]['students.student_name'])
+      unique_student_names.add(resp[i]['students.student_name'])
+
+    }
+  }
   console.log("student_names is", student_names)
+  console.log("unique_student_names is", unique_student_names)
+  // const student_names = resp.map((row)=> {
+  //   return row['students.student_name']
+  // })
   return student_names
 
 
 }
 
 module.exports = {
+  getTeachers,
   createTeacher,
   registerStudent,
   commonStudents,

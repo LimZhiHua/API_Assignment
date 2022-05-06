@@ -4,6 +4,18 @@
 
 const service = require('../services/student_service');
 
+
+async function getStudents(req, res){
+  try {
+    const response = await service.getStudents();
+      res.json({'students' :response});
+  } catch (err) {
+      console.error(`Error while getting programming languages`, err.message);
+      res.status(500).send({'message': err});
+  }
+}
+
+
 async function createStudent(req, res) {
   try {
     const student_name = req.body.student;    
@@ -17,5 +29,6 @@ async function createStudent(req, res) {
 }
 
 module.exports = {
+    getStudents,
     createStudent
 };
