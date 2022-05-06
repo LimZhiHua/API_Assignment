@@ -1,0 +1,19 @@
+To run a local copy, make a .env file with the following info (change variables as necessary):
+
+DB_HOST="localhost"
+DB_USER="root"
+DB_PASSWORD="password"
+DB_NAME="api_assignment"
+PORT=3306
+
+To install required packages, run:
+npm install
+
+To run the code, run:
+node server.js
+
+The test script uses mocha, which needs to be installed beforehand. To do this, run:
+npm install --global mocha
+
+To run the test, run:
+mocha test/test.js
