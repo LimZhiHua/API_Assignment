@@ -6,12 +6,12 @@ const sequelize = require("./db.service")
 // const db = require('./db.service');
 const Teachers = require("../models/teachers_model");
 const Students = require("../models/students_model");
+
 const StudentService = require("./student_service")
+
 const Teacher_student = sequelize.define('teacher_student')
 
 const Sequlize = require('sequelize');
-const { set } = require("../../server");
-
 
 async function getTeachers(){
   const resp =  await Teachers.findAll()
@@ -117,14 +117,8 @@ async function retreiveForNotification (teacher_name, student_list){
 
     }
   }
-  console.log("student_names is", student_names)
-  console.log("unique_student_names is", unique_student_names)
-  // const student_names = resp.map((row)=> {
-  //   return row['students.student_name']
-  // })
+
   return student_names
-
-
 }
 
 module.exports = {
