@@ -12,5 +12,8 @@ npm install
 To run the code, run:
 node server.js
 
+The test script uses mocha, which needs to be installed beforehand. To do this, run:
+npm install --global mocha
+
 To run the test, run:
 mocha test/test.js
