@@ -69,6 +69,7 @@ async function commonStudents(req, res){
     let teacherArr = [];
     if(!teacher_names){
       res.status(404).send({'message': "Please specify at least one teacher"});
+      return;
     }else if(!Array.isArray(teacher_names)){
       teacherArr.push(teacher_names)
     }else{
