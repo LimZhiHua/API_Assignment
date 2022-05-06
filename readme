@@ -1,0 +1,13 @@
+To run a local copy, make a .env file with the following info (change variables as necessary):
+
+DB_HOST="localhost"
+DB_USER="root"
+DB_PASSWORD="password"
+DB_NAME="api_assignment"
+PORT=3306
+
+To run the code, run:
+node server.js
+
+To run the test, run:
+mocha test/test.js
