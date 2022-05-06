@@ -6,6 +6,9 @@ DB_PASSWORD="password"
 DB_NAME="api_assignment"
 PORT=3306
 
+To install required packages, run:
+npm install
+
 To run the code, run:
 node server.js
 
