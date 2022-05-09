@@ -54,8 +54,10 @@ async function commonStudents(teacherArr){
   // Im basically joining to get all the students with the teachers, then grouping it 
   // and only taking groups which have enouch teachers.
   const resp =  await Teachers.findAll({
-    attributes: [[sequelize.fn("COUNT", sequelize.col("teacher_name")), "teacherCount"]],
-    include:{
+    attributes: [[sequelize.fn("COUNT", sequelize.col("teacher_name")), "teacherCount"], sequelize.col("student_name")],
+      includeIgnoreAttributes:false,
+    include:{   
+      attributes: ["student_name"],
       model: Students,
       required: true,
     },
@@ -68,8 +70,9 @@ async function commonStudents(teacherArr){
     },
     raw : true    
   })
+  console.log("resp is", resp)
   const student_names = resp.map((row)=> {
-    return row['students.student_name']
+    return row['student_name']
   })
   //console.log("resp data value is", resp[0].students)
   return student_names
