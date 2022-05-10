@@ -24,22 +24,20 @@ async function getTeachers(){
 
 }
 
-async function createTeacher(email){
-  return await Teachers.findOrCreate({where: {teacher_email: email}})
+async function createTeacher(email, trans){
+  return await Teachers.findOrCreate({where: {teacher_email: email}, transaction: trans})
 }
 
-async function registerStudent(teacher_email, student_email){
+async function registerStudent(teacher_email, student_email, trans){
 
-  await sequelize.transaction(async(t) => {
 
-    await createTeacher(teacher_email)
-    await StudentService.createStudent(student_email)
+    await createTeacher(teacher_email, trans)
+    await StudentService.createStudent(student_email, trans)
     
-    const foundRelationship = await Teacher_student.findOne({where:{studentStudentEmail: student_email, teacherTeacherEmail: teacher_email}})
+    const foundRelationship = await Teacher_student.findOne({where:{studentStudentEmail: student_email, teacherTeacherEmail: teacher_email}},{ transaction: trans })
     if(foundRelationship == null){
-      await Teacher_student.create({studentStudentEmail: student_email, teacherTeacherEmail: teacher_email})
+      await Teacher_student.create({studentStudentEmail: student_email, teacherTeacherEmail: teacher_email},{ transaction: trans })
     }
-  });
 
   
 }
@@ -52,7 +50,7 @@ async function registerStudents(teacher_email, student_emails){
 
     let promises = []
     for(let  i =  0; i < student_emails.length; i++){
-      promises.push(registerStudent(teacher_email, student_emails[i]))
+      promises.push(registerStudent(teacher_email, student_emails[i], t))
     }
     await Promise.all(promises)
     await t.commit();

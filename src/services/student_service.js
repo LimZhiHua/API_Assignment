@@ -17,8 +17,8 @@ async function getStudent(email){
 }
 
 
-async function createStudent(email){
-    return Students.findOrCreate({where:{student_email: email}})
+async function createStudent(email, trans){
+    return Students.findOrCreate({where:{student_email: email}, transaction: trans})
 }
 
   
