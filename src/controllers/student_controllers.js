@@ -1,7 +1,3 @@
-// this contains the controllers that teachers will use
-
-// Controllers call the services and set the response/status code 
-
 const service = require('../services/student_service');
 
 

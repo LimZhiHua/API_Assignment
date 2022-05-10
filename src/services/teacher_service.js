@@ -25,7 +25,8 @@ async function getTeachers(){
 }
 
 async function createTeacher(email, trans){
-  return await Teachers.findOrCreate({where: {teacher_email: email}, transaction: trans})
+  const val =  await Teachers.findOrCreate({where: {teacher_email: email}, transaction: trans} )
+  return val;
 }
 
 async function registerStudent(teacher_email, student_email, trans){
@@ -46,7 +47,7 @@ async function registerStudents(teacher_email, student_emails){
 
   const t = await sequelize.transaction();
   try{
-    await createTeacher(teacher_email)
+    await createTeacher(teacher_email, t)
 
     let promises = []
     for(let  i =  0; i < student_emails.length; i++){
