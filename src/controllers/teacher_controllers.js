@@ -1,7 +1,3 @@
-// this contains the controllers that teachers will use
-
-// Controllers call the services and set the response/status code 
-
 const service = require('../services/teacher_service');
 const utils = require("../utilities/utils")
 
@@ -16,31 +12,10 @@ async function getTeachers(req, res){
   }
 }
 
-
-/*
-    A teacher can register multiple students(new or existing). A student can also be registered to
-    multiple teachers.
-    Endpoint: POST /api/register
-    Headers: Content-Type: application/json
-    Success response status: HTTP 204
-    Request body example:
-    {
-        "teacher": "teacherken@gmail.com",
-        "students":
-        [
-            "studentjon@gmail.com",
-            "studenthon@gmail.com"
-        ]
-    }
-
-
-    Basically adds entries to the jointeacherstudent table
-*/
 async function register(req, res){
   try {
 
-    // check to make sure they emails are proper emails.
-    // make sure they pass in something for the teacher/students
+  
 
     const teacher_email = req.body.teacher;  
     const student_emails = req.body.students;

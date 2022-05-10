@@ -1,17 +1,15 @@
-const service = require('../services/student_service');
+const service = require("../services/student_service");
 
-
-async function getStudents(req, res){
+async function getStudents(req, res) {
   try {
     const response = await service.getStudents();
-      res.json({'students' :response});
+    res.json({ students: response });
   } catch (err) {
-      console.error(`Error while getting programming languages`, err.message);
-      res.status(500).send({'message': err});
+    console.error(`Error while getting student controller`, err.message);
+    res.status(500).send({ message: err });
   }
 }
 
-
 module.exports = {
-    getStudents,
+  getStudents,
 };
