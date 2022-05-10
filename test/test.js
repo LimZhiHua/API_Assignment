@@ -1,4 +1,4 @@
-const api = require('../server')
+const api = require('../src/server')
 const request = require('supertest');
 var expect = require('chai').expect
 
@@ -12,9 +12,89 @@ before( done =>
 })
 
 
+describe('register: unspecified teacher', () => {
+    it('Sends to api/register without a teacher field', async () => {
 
+        const res = await request(api).post('/api/register').send(
+            {
+                "students":
+                    [
+                    "student0@mail.com"
+                    ]
+            }
+        )
+        expect(res.statusCode).to.equal(400)
 
-describe('One teacher, one student that doesnt exist', () => {
+        expect(JSON.stringify(res.body)).to.equal(JSON.stringify(
+            {
+                'message':'Please specify a teacher and list of students'
+            }))  
+      
+
+    })
+})
+
+describe('register: unspecified students', () => {
+    it('Sends to api/register without a student field', async () => {
+
+        const res = await request(api).post('/api/register').send(
+            {
+                "teacher": 'teacher0@mail.com'
+            }
+        )
+        expect(res.statusCode).to.equal(400)
+
+        expect(JSON.stringify(res.body)).to.equal(JSON.stringify(
+            {
+                'message':'Please specify a teacher and list of students'
+            }))  
+    })
+})
+
+describe('register: invalid teacher email', () => {
+    it('Sends to api/register without a student field', async () => {
+
+        const res = await request(api).post('/api/register').send(
+            {
+                "teacher": 'teacher0mailcom',
+                "students":
+                    [
+                    "student0@mail.com"
+                    ]
+            }
+        )
+        expect(res.statusCode).to.equal(400)
+
+        expect(JSON.stringify(res.body)).to.equal(JSON.stringify(
+            {
+                'message':'Please ensure the teacher has a valid email'
+            }))  
+    })
+})
+
+describe('register: invalid student email', () => {
+    it('Sends to api/register without a student field', async () => {
+
+        const res = await request(api).post('/api/register').send(
+            {
+                "teacher": 'teacher0@mail.com',
+                "students":
+                    [
+                    "student0@mail.com",
+                    "studentmail.com"
+                    ]
+            }
+        )
+        expect(res.statusCode).to.equal(400)
+
+        expect(JSON.stringify(res.body)).to.equal(JSON.stringify(
+            {
+                'message':'Please ensure that all students have a valid email'
+            }))  
+    })
+})
+
+describe('register: One teacher, one student that doesnt exist', () => {
     it('Returns status code 204 if passed', async () => {
 
         const res = await request(api).post('/api/register').send(
@@ -38,7 +118,7 @@ describe('One teacher, one student that doesnt exist', () => {
             {
                 'students':[
                     {
-                        "student_name": "student0@mail.com",
+                        "student_email": "student0@mail.com",
                         "suspended": false
                     }
                 ]
@@ -47,7 +127,7 @@ describe('One teacher, one student that doesnt exist', () => {
     })
 })
 
-describe(' One teacher, multiple students that dont exist', () => {
+describe('register: One teacher, multiple students that dont exist', () => {
     it('Returns status code 204 if passed', async () => {
 
         const res = await request(api).post('/api/register').send(
@@ -72,15 +152,15 @@ describe(' One teacher, multiple students that dont exist', () => {
             {
                 'students':[
                     {
-                        "student_name": "student0@mail.com",
+                        "student_email": "student0@mail.com",
                         "suspended": false
                     },
                     {
-                        "student_name": "student1@mail.com",
+                        "student_email": "student1@mail.com",
                         "suspended": false
                     },
                     {
-                        "student_name": "student2@mail.com",
+                        "student_email": "student2@mail.com",
                         "suspended": false
                     }
                 ]
@@ -90,7 +170,7 @@ describe(' One teacher, multiple students that dont exist', () => {
     })
 })
 
-describe("different teacher, existing students", () => {
+describe("register: different teacher, existing students", () => {
     it('Returns status code 204 if passed', async () => {
         const res = await request(api).post('/api/register').send(
             {
@@ -115,15 +195,15 @@ describe("different teacher, existing students", () => {
             {
                 'students':[
                     {
-                        "student_name": "student0@mail.com",
+                        "student_email": "student0@mail.com",
                         "suspended": false
                     },
                     {
-                        "student_name": "student1@mail.com",
+                        "student_email": "student1@mail.com",
                         "suspended": false
                     },
                     {
-                        "student_name": "student2@mail.com",
+                        "student_email": "student2@mail.com",
                         "suspended": false
                     }
                 ]
@@ -137,10 +217,10 @@ describe("different teacher, existing students", () => {
 
 // //-------------------------/api/commonstudents-----------------------
 
-describe('Empty/No teacher ', () => {
+describe('commonstudents: Empty/No teacher ', () => {
     it('Sends a call with no teachers specified', async () => {
         const res = await request(api).get('/api/commonstudents').send()
-        expect(res.statusCode).to.equal(404)
+        expect(res.statusCode).to.equal(400)
         expect(JSON.stringify(res.body)).to.equal(JSON.stringify(
             {
                 "message": "Please specify at least one teacher"
@@ -149,7 +229,7 @@ describe('Empty/No teacher ', () => {
     })
 })
 
-describe('One teacher', () => {
+describe('commonstudents: One teacher', () => {
     it('Sends a call with  only one teacher specified', async () => {
 
         const res = await request(api).get('/api/commonstudents?teacher=teacher0@mail.com').send()
@@ -166,7 +246,7 @@ describe('One teacher', () => {
     })
 })
 
-describe('Multiple teachers', () => {
+describe('commonstudents: Multiple teachers', () => {
     it('Sends a call with  multiple teachers specified', async () => {
         const res = await request(api).get('/api/commonstudents?teacher=teacher0@mail.com&teacher=teacher1@mail.com').send()
         expect(res.statusCode).to.equal(200)
@@ -181,7 +261,7 @@ describe('Multiple teachers', () => {
     })
 })
 
-describe('Non-Existant teachers', () => {
+describe('commonstudents: Non-Existant teachers', () => {
     it('Sends a call with a teacher that doesnt exist teacher', async () => {
         const res = await request(api).get('/api/commonstudents?teacher=teacher@gmail.com&teacher=teacherFAKE@mail.com').send()
         expect(res.statusCode).to.equal(200)
@@ -194,7 +274,21 @@ describe('Non-Existant teachers', () => {
 })
 
 //-------------------------/api/suspend-----------------------
-describe('Suspend a student', () => {
+describe('suspend: no students specified', () => {
+    it('Suspending one existing student', async () => {
+        const res = await request(api).post('/api/suspend').send(
+            {}
+        )
+        expect(res.statusCode).to.equal(404)
+        expect(JSON.stringify(res.body)).to.equal(JSON.stringify(
+            {
+                'message': 'Please specify a student'
+        }))  
+
+    })
+})
+
+describe('suspend: Suspend a student', () => {
     it('Suspending one existing student', async () => {
         const res = await request(api).post('/api/suspend').send(
             {
@@ -208,15 +302,15 @@ describe('Suspend a student', () => {
             {
                 'students':[
                     {
-                        "student_name": "student0@mail.com",
+                        "student_email": "student0@mail.com",
                         "suspended": true
                     },
                     {
-                        "student_name": "student1@mail.com",
+                        "student_email": "student1@mail.com",
                         "suspended": false
                     },
                     {
-                        "student_name": "student2@mail.com",
+                        "student_email": "student2@mail.com",
                         "suspended": false
                     }
                 ]
@@ -225,7 +319,7 @@ describe('Suspend a student', () => {
     })
 })
 
-describe('Non-existant teacher suspends a student', () => {
+describe('suspend: Teacher suspends a student', () => {
     it('suspending a non-existant student', async () => {
         const res = await request(api).post('/api/suspend').send(
             {
@@ -243,7 +337,39 @@ describe('Non-existant teacher suspends a student', () => {
 
 //-------------------------/api/retrievefornotifications-----------------------
 
-describe('empty notification', () => {
+describe('retrievefornotifications: no notification specified', () => {
+    it('Teacher sending with no notification ', async () => {
+        const res = await request(api).post('/api/retrievefornotifications').send(
+            {
+                "teacher": "teacher0@mail.com",
+            }
+        )
+        expect(res.statusCode).to.equal(400)
+        expect(JSON.stringify(res.body)).to.equal(JSON.stringify(
+            {
+                'message': 'Please provide a notification'
+            }
+        ))
+    })
+})
+
+describe('retrievefornotifications: no teacher specified', () => {
+    it('Teacher sending with no notification ', async () => {
+        const res = await request(api).post('/api/retrievefornotifications').send(
+            {
+                "notification": "here is a notifcation"
+            }
+        )
+        expect(res.statusCode).to.equal(400)
+        expect(JSON.stringify(res.body)).to.equal(JSON.stringify(
+            {
+                'message': 'Please provide a teacher'
+            }
+        ))
+    })
+})
+
+describe('retrievefornotifications: empty notification', () => {
     it('Teacher sending empty  notification (student0 is suspended)', async () => {
         const res = await request(api).post('/api/retrievefornotifications').send(
             {
@@ -251,20 +377,17 @@ describe('empty notification', () => {
                 "notification": ""
             }
         )
-        expect(res.statusCode).to.equal(200)
+        expect(res.statusCode).to.equal(400)
         expect(JSON.stringify(res.body)).to.equal(JSON.stringify(
             {
-                "recipients": [
-                    "student1@mail.com",
-                    "student2@mail.com"
-                ]
+                'message': 'Please provide a notification'
             }
         ))
     })
 })
 
 
-describe('meaningless notification', () => {
+describe('retrievefornotifications: meaningless notification', () => {
     it('Teacher sending  notification without any meaningful @students (remember that student0 is suspended)', async () => {
         const res = await request(api).post('/api/retrievefornotifications').send(
             {
@@ -284,7 +407,7 @@ describe('meaningless notification', () => {
     })
 })
 
-describe('teacher with notification', () => {
+describe('retrievefornotifications: teacher with notification', () => {
     it('Teacher sending notifiaction with a student', async () => {
 
         // adding some more students and teachers for testing
@@ -340,7 +463,7 @@ describe('simple teacher', () => {
     })
 })
 
-describe('simple teacher', () => {
+describe('retrievefornotifications: teacher', () => {
     it('Teacher sending notifiaction with a duplicate student and a new student', async () => {
         const res = await request(api).post('/api/retrievefornotifications').send(
             {
@@ -362,7 +485,7 @@ describe('simple teacher', () => {
 })
 
 
-describe('Non-existant teacher', () => {
+describe('retrievefornotifications: Non-existant teacher', () => {
     it('Non-existant teacher sending notifications to students', async () => {
         const res = await request(api).post('/api/retrievefornotifications').send(
             {

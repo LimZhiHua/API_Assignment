@@ -2,7 +2,7 @@ const Sequelize = require('sequelize')
 const sequelize = require("../services/db.service")
 
 const Students = sequelize.define("students", {
-    student_name: {
+    student_email: {
         type: Sequelize.STRING,
         primaryKey: true,
         allowNull: false

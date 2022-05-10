@@ -3,7 +3,9 @@
 // Controllers call the services and set the response/status code 
 
 const service = require('../services/teacher_service');
+const utils = require("../utilities/utils")
 
+// for testing
 async function getTeachers(req, res){
   try {
     const response = await service.getTeachers();
@@ -15,18 +17,6 @@ async function getTeachers(req, res){
 }
 
 
-// This isn't part of the required APIs. it just seems like something i would use
-async function createTeacher(req, res) {
-  try {
-    const teacher_name = req.body.teacher;    
-    const response = await service.createTeacher(teacher_name);
-      console.log("response is", response)
-      res.json(response);
-  } catch (err) {
-      console.error(`Error while creating teachers`, err.message);
-      res.status(500).send({'message': err});
-  }
-}
 /*
     A teacher can register multiple students(new or existing). A student can also be registered to
     multiple teachers.
@@ -48,15 +38,32 @@ async function createTeacher(req, res) {
 */
 async function register(req, res){
   try {
-    const teacher_name = req.body.teacher;  
-    const student_names = req.body.students;
+
+    // check to make sure they emails are proper emails.
+    // make sure they pass in something for the teacher/students
+
+    const teacher_email = req.body.teacher;  
+    const student_emails = req.body.students;
     const promises = [];  
-    for(let  i =  0; i < student_names.length; i++){
-      promises.push(service.registerStudent(teacher_name, student_names[i]))
+
+    if (!teacher_email || !student_emails){
+      return res.status(400).send({'message': "Please specify a teacher and list of students"});
     }
-    Promise.allSettled(promises).then( (response) => {
-      res.status(204).send();
-    })
+
+    if ( ! await utils.emailCheck(teacher_email)){
+      return res.status(400).send({'message': "Please ensure the teacher has a valid email"})
+    }
+
+    if( !await utils.arrEmailCheck(student_emails)){
+      return res.status(400).send({'message': "Please ensure that all students have a valid email"})
+    }
+
+    for(let  i =  0; i < student_emails.length; i++){
+      promises.push(service.registerStudent(teacher_email, student_emails[i]))
+    }
+    await Promise.all(promises)
+    res.sendStatus(204)
+
   } catch (err) {
       console.error(`Error while trying to register a student`, err.message);
       res.status(500).send({'message': err});
@@ -65,15 +72,16 @@ async function register(req, res){
 
 async function commonStudents(req, res){
   try {
-    const teacher_names = req.query.teacher;
+    const teacher_emails = req.query.teacher;
     let teacherArr = [];
-    if(!teacher_names){
-      res.status(404).send({'message': "Please specify at least one teacher"});
-      return;
-    }else if(!Array.isArray(teacher_names)){
-      teacherArr.push(teacher_names)
+    if(!teacher_emails){
+      return res.status(400).send({'message': "Please specify at least one teacher"});
+    }
+    
+    if(!Array.isArray(teacher_emails)){
+      teacherArr.push(teacher_emails)
     }else{
-      teacherArr = teacher_names
+      teacherArr = teacher_emails
     }
   
     const response = await service.commonStudents(teacherArr);
@@ -86,9 +94,15 @@ async function commonStudents(req, res){
 
 async function suspendStudent(req, res){
   try {
-    const student_name = req.body.student;
-    await service.suspendStudent(student_name);
-    res.status(204).send();
+    
+    const student_email = req.body.student;
+
+    if(!student_email){
+      return res.status(404).send({'message': 'Please specify a student'})
+    }
+
+    await service.suspendStudent(student_email);
+    res.sendStatus(204)
   } catch (err) {
       if (err.code === 404){
         res.status(404).send({'message': 'Student does not exist'});
@@ -100,12 +114,19 @@ async function suspendStudent(req, res){
 }
 
 async function retrieveForNotifications (req, res){
-  const teacher_name = req.body.teacher;
+  const teacher_email = req.body.teacher;
   const notification = req.body.notification;
-  // Regex detects: @stuff@stuff 
-  // Allows for multiple fullstops since some emails have that e.g zhihua.lim@mail.utoronto.ca
-  const regex = /@[a-zA-Z0-9_.]+@[a-zA-Z0-9_.]+/g
-  const studentList = notification.match(regex);
+
+
+  if(!notification || notification.length === 0){
+      return res.status(400).send({'message': 'Please provide a notification'});
+  }
+
+  if(!teacher_email || teacher_email.length === 0){
+    return res.status(400).send({'message': 'Please provide a teacher'});
+  }
+
+  const studentList = await utils.notifEmailCheck(notification)
   let student_arr = []
   if (!notification || !studentList || notification.length === 0 ){
     student_arr = []
@@ -113,12 +134,13 @@ async function retrieveForNotifications (req, res){
     student_arr.push(studentList.slice(1))
   }else{
     studentList.forEach(student => {
+      console.log("student is", student)
       student_arr.push(student.slice(1))
     })
   }
 
   try {
-    const resp = await service.retreiveForNotification(teacher_name, student_arr);
+    const resp = await service.retreiveForNotification(teacher_email, student_arr);
     res.status(200).send({"recipients" :resp});
   } catch (err) {
       if (err.code === 404){
@@ -135,7 +157,6 @@ async function retrieveForNotifications (req, res){
 
   module.exports = {
     getTeachers,
-    createTeacher,
     register,
     commonStudents,
     suspendStudent,

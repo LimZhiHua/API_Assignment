@@ -9,14 +9,5 @@ const sequelize = new Sequlize(dbConfig.database, "root", "password",{
     port: dbConfig.port,
 })
 
-// var conn = mysql.createConnection({
-//     host: dbConfig.host,
-//     user: dbConfig.user,
-//     password: dbConfig.password,
-//     database: dbConfig.database,
-//     insecureAuth : true
-//   });
-
-// const query = util.promisify(conn.query).bind(conn);
 
 module.exports =  sequelize

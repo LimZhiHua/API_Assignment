@@ -13,15 +13,6 @@ const db = {
    
 };
 
+
 module.exports = db;
 
-// Change these parameters when you get an actual DB instead of the local one.
-// var conn = mysql.createConnection({
-//     host: "localhost",
-//     user: "root",
-//     password: "password",
-//     database: "new_schema",
-//     insecureAuth : true
-//   });
-
-//   module.exports = conn;

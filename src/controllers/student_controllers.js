@@ -18,8 +18,8 @@ async function getStudents(req, res){
 
 async function createStudent(req, res) {
   try {
-    const student_name = req.body.student;    
-    const response = await service.createStudent(student_name);
+    const student_email = req.body.student;    
+    const response = await service.createStudent(student_email);
       console.log("response is", response)
       res.json(response);
   } catch (err) {
@@ -30,5 +30,4 @@ async function createStudent(req, res) {
 
 module.exports = {
     getStudents,
-    createStudent
 };
