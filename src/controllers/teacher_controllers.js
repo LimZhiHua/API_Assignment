@@ -58,10 +58,8 @@ async function register(req, res){
       return res.status(400).send({'message': "Please ensure that all students have a valid email"})
     }
 
-    for(let  i =  0; i < student_emails.length; i++){
-      promises.push(service.registerStudent(teacher_email, student_emails[i]))
-    }
-    await Promise.all(promises)
+    await service.registerStudents(teacher_email, student_emails)
+   
     res.sendStatus(204)
 
   } catch (err) {

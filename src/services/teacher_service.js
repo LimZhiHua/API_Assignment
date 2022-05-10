@@ -44,6 +44,26 @@ async function registerStudent(teacher_email, student_email){
   
 }
 
+async function registerStudents(teacher_email, student_emails){
+
+  const t = await sequelize.transaction();
+  try{
+    await createTeacher(teacher_email)
+
+    let promises = []
+    for(let  i =  0; i < student_emails.length; i++){
+      promises.push(registerStudent(teacher_email, student_emails[i]))
+    }
+    await Promise.all(promises)
+    await t.commit();
+  }catch(err){
+    await t.rollback()
+    console.log("error is", err)
+    throw err
+  }
+  
+}
+
 async function commonStudents(teacherArr){
   const result = await sequelize.transaction(async(t) => {
   // Im basically joining to get all the students with the teachers, then grouping it 
@@ -123,7 +143,7 @@ async function retreiveForNotification (teacher_email, student_list){
 module.exports = {
   getTeachers,
   createTeacher,
-  registerStudent,
+  registerStudents,
   commonStudents,
   suspendStudent,
   retreiveForNotification

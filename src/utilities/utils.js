@@ -4,7 +4,7 @@ const notifEmailRegex = /@\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*/g
 
 
 const notifEmailCheck =  async (text) => {
-    return await text.match(notifEmailRegex)
+    return  text.match(notifEmailRegex)
 
 }
 
