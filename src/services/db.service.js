@@ -1,5 +1,3 @@
-const mysql = require('mysql2');
-const util = require('util');
 const Sequlize = require('sequelize')
 const dbConfig = require('../configs/db.config');
 

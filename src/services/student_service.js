@@ -1,4 +1,3 @@
-const sequelize = require("./db.service")
 const Students = require("../models/students_model")
 
 
@@ -8,7 +7,6 @@ async function getStudents(){
       return { "student_email" : row['student_email'] ,"suspended": row['suspended']}
     })
   
-    //console.log("resp data value is", resp[0].students)
     return student_emails
   
 }
