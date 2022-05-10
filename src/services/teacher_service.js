@@ -1,13 +1,8 @@
-// this contains services that teachers can do. Does not necessarily only affect the teachers table
-
 const sequelize = require("./db.service");
-// const db = require('./db.service');
 const Teachers = require("../models/teachers_model");
 const Students = require("../models/students_model");
 const Teacher_student = require("../models/teacher_student_model");
-
 const StudentService = require("./student_service");
-
 const Sequlize = require("sequelize");
 
 async function getTeachers() {
@@ -24,6 +19,22 @@ async function createTeacher(email, trans) {
     transaction: trans,
   });
   return val;
+}
+
+async function registerStudents(teacher_email, student_emails) {
+  const t = await sequelize.transaction();
+  try {
+    let promises = [];
+    for (let i = 0; i < student_emails.length; i++) {
+      promises.push(registerStudent(teacher_email, student_emails[i], t));
+    }
+    await Promise.all(promises);
+    await t.commit();
+  } catch (err) {
+    await t.rollback();
+    console.log("error is", err);
+    throw err;
+  }
 }
 
 async function registerStudent(teacher_email, student_email, trans) {
@@ -50,54 +61,33 @@ async function registerStudent(teacher_email, student_email, trans) {
   }
 }
 
-async function registerStudents(teacher_email, student_emails) {
-  const t = await sequelize.transaction();
-  try {
-    await createTeacher(teacher_email, t);
 
-    let promises = [];
-    for (let i = 0; i < student_emails.length; i++) {
-      promises.push(registerStudent(teacher_email, student_emails[i], t));
-    }
-    await Promise.all(promises);
-    await t.commit();
-  } catch (err) {
-    await t.rollback();
-    console.log("error is", err);
-    throw err;
-  }
-}
 
 async function commonStudents(teacherArr) {
-  const result = await sequelize.transaction(async (t) => {
-    // Im basically joining to get all the students with the teachers, then grouping it
-    // and only taking groups which have enough teachers.
-    const resp = await Teachers.findAll({
-      attributes: [
-        [sequelize.fn("COUNT", sequelize.col("teacher_email")), "teacherCount"],
-        sequelize.col("student_email"),
-      ],
-      includeIgnoreAttributes: false,
-      include: {
-        attributes: ["student_email"],
-        model: Students,
-        required: true,
-      },
-      where: {
-        teacher_email: { [Sequlize.Op.or]: teacherArr },
-      },
-      group: ["student_email"],
-      having: {
-        teacherCount: teacherArr.length,
-      },
-      raw: true,
-    });
-    const student_emails = resp.map((row) => {
-      return row["student_email"];
-    });
-    return student_emails;
+  const resp = await Teachers.findAll({
+    attributes: [
+      [sequelize.fn("COUNT", sequelize.col("teacher_email")), "teacherCount"],
+      sequelize.col("student_email"),
+    ],
+    includeIgnoreAttributes: false,
+    include: {
+      attributes: ["student_email"],
+      model: Students,
+      required: true,
+    },
+    where: {
+      teacher_email: { [Sequlize.Op.or]: teacherArr },
+    },
+    group: ["student_email"],
+    having: {
+      teacherCount: teacherArr.length,
+    },
+    raw: true,
   });
-  return result;
+  const student_emails = resp.map((row) => {
+    return row["student_email"];
+  });
+  return student_emails;
 }
 
 async function suspendStudent(student_email) {
@@ -121,7 +111,6 @@ async function retreiveForNotification(teacher_email, student_list) {
   const resp = await Teachers.findAll({
     include: {
       model: Students,
-      // required: true,
     },
     group: ["student_email", "teacher_email"],
     having: {
