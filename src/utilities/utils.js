@@ -3,20 +3,21 @@ const notifEmailRegex = /@\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*/g
 
 
 
-const notifEmailCheck =  async (text) => {
+const notifEmailCheck =  (text) => {
     return  text.match(notifEmailRegex)
 
 }
 
-const emailCheck =  async (text) => {
-    return  await text.match(emailRegex)
+const emailCheck =   (text) => {
+
+    return  text.match(emailRegex)
 }
 
-const arrEmailCheck = async (emailArr)=>{
+const arrEmailCheck =  (emailArr)=>{
     let valid = true;
     let i = 0;
     while(i < emailArr.length && valid ){
-        if(!await emailCheck(emailArr[i])){
+        if(! emailCheck(emailArr[i])){
 
             valid = false;
         }else{

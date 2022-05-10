@@ -44,17 +44,16 @@ async function register(req, res){
 
     const teacher_email = req.body.teacher;  
     const student_emails = req.body.students;
-    const promises = [];  
 
     if (!teacher_email || !student_emails){
       return res.status(400).send({'message': "Please specify a teacher and list of students"});
     }
 
-    if (!await utils.emailCheck(teacher_email)){
+    if (!utils.emailCheck(teacher_email)){
       return res.status(400).send({'message': "Please ensure the teacher has a valid email"})
     }
 
-    if( !await utils.arrEmailCheck(student_emails)){
+    if( !utils.arrEmailCheck(student_emails)){
       return res.status(400).send({'message': "Please ensure that all students have a valid email"})
     }
 
