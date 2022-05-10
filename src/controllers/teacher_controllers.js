@@ -50,7 +50,7 @@ async function register(req, res){
       return res.status(400).send({'message': "Please specify a teacher and list of students"});
     }
 
-    if ( ! await utils.emailCheck(teacher_email)){
+    if (!await utils.emailCheck(teacher_email)){
       return res.status(400).send({'message': "Please ensure the teacher has a valid email"})
     }
 

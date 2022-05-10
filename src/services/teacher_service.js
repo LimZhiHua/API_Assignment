@@ -47,7 +47,7 @@ async function registerStudent(teacher_email, student_email){
 async function commonStudents(teacherArr){
   const result = await sequelize.transaction(async(t) => {
   // Im basically joining to get all the students with the teachers, then grouping it 
-    // and only taking groups which have enouch teachers.
+    // and only taking groups which have enough teachers.
     const resp =  await Teachers.findAll({
       attributes: [[sequelize.fn("COUNT", sequelize.col("teacher_email")), "teacherCount"], sequelize.col("student_email")],
         includeIgnoreAttributes:false,
@@ -68,7 +68,6 @@ async function commonStudents(teacherArr){
     const student_emails = resp.map((row)=> {
       return row['student_email']
     })
-    //console.log("resp data value is", resp[0].students)
     return student_emails
   })
   return result;
