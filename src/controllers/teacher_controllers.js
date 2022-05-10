@@ -45,7 +45,7 @@ async function register(req, res){
     const teacher_email = req.body.teacher;  
     const student_emails = req.body.students;
 
-    if (!teacher_email || !student_emails){
+    if (!teacher_email || !student_emails || student_emails.length === 0 || !Array.isArray(student_emails)){
       return res.status(400).send({'message': "Please specify a teacher and list of students"});
     }
 

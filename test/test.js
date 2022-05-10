@@ -34,6 +34,28 @@ describe('register: unspecified teacher', () => {
     })
 })
 
+describe('register: empty student array', () => {
+    it('Sends to api/register without a teacher field', async () => {
+
+        const res = await request(api).post('/api/register').send(
+            {
+                "teacher": 'teacher0@mail.com',
+                "students":
+                    [
+                    ]
+            }
+        )
+        expect(res.statusCode).to.equal(400)
+
+        expect(JSON.stringify(res.body)).to.equal(JSON.stringify(
+            {
+                'message':'Please specify a teacher and list of students'
+            }))  
+      
+
+    })
+})
+
 describe('register: unspecified students', () => {
     it('Sends to api/register without a student field', async () => {
 
@@ -90,6 +112,27 @@ describe('register: invalid student email', () => {
         expect(JSON.stringify(res.body)).to.equal(JSON.stringify(
             {
                 'message':'Please ensure that all students have a valid email'
+            }))  
+    })
+})
+
+describe('register: empty student email', () => {
+    it('Sends to api/register without a student field', async () => {
+
+        const res = await request(api).post('/api/register').send(
+            {
+                "teacher": 'teacher0@mail.com',
+                "students":
+                    [
+                   
+                    ]
+            }
+        )
+        expect(res.statusCode).to.equal(400)
+
+        expect(JSON.stringify(res.body)).to.equal(JSON.stringify(
+            {
+                'message':'Please specify a teacher and list of students'
             }))  
     })
 })
